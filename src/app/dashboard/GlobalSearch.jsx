@@ -2,22 +2,18 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { usePlayer } from "@/context/PlayerContext"; // 👈 global player context
+import { usePlayer } from "@/context/PlayerContext";
 import MiniPlayer from "@/context/MiniPlayer";
+
 export default function GlobalSearch() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState({
-    songs: [],
-    albums: [],
-    playlists: [],
-  });
+  const [results, setResults] = useState({ songs: [], albums: [], playlists: [] });
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
-  const { playSong } = usePlayer(); // 🎵 Global play handler
+  const { playSong } = usePlayer();
 
-  // ✅ Fetch user's favorites on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) fetchFavorites(token);
@@ -34,23 +30,14 @@ export default function GlobalSearch() {
     }
   };
 
-  // 🔍 Universal search handler
   const searchAll = async () => {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.get(
-        `/api/serenity/search?query=${encodeURIComponent(query)}`
-      );
+      const res = await axios.get(`/api/serenity/search?query=${encodeURIComponent(query)}`);
       const data = res.data.data;
-      console.log("Search Response:", data);
-
       if (Array.isArray(data.results)) {
-        setResults({
-          songs: data.results || [],
-          albums: [],
-          playlists: [],
-        });
+        setResults({ songs: data.results || [], albums: [], playlists: [] });
       } else {
         setResults({
           songs: data.songs?.results || data.songs || [],
@@ -65,18 +52,13 @@ export default function GlobalSearch() {
     }
   };
 
-  // 🎵 Load trending songs by default
   useEffect(() => {
     const loadDefault = async () => {
       try {
         const res = await axios.get(`/api/serenity/search?query=trending`);
         const data = res.data.data;
         if (Array.isArray(data.results)) {
-          setResults({
-            songs: data.results || [],
-            albums: [],
-            playlists: [],
-          });
+          setResults({ songs: data.results || [], albums: [], playlists: [] });
         } else {
           setResults({
             songs: data.songs?.results || data.songs || [],
@@ -91,7 +73,6 @@ export default function GlobalSearch() {
     loadDefault();
   }, []);
 
-  // ❤️ Add/Remove Favorites
   const toggleFavorite = async (song) => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -101,20 +82,14 @@ export default function GlobalSearch() {
 
     const isFav = favorites.some((f) => f.id === song.id);
     setFavLoading(true);
-
     try {
       if (isFav) {
-        await axios.delete(
-          `/api/user/favorites?id=${encodeURIComponent(song.id)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.delete(`/api/user/favorites?id=${encodeURIComponent(song.id)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setFavorites((prev) => prev.filter((f) => f.id !== song.id));
       } else {
-        await axios.post(
-          "/api/user/favorites",
-          { song },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.post("/api/user/favorites", { song }, { headers: { Authorization: `Bearer ${token}` } });
         setFavorites((prev) => [...prev, song]);
       }
     } catch (err) {
@@ -127,189 +102,179 @@ export default function GlobalSearch() {
   const isFavorite = (songId) => favorites.some((f) => f.id === songId);
 
   return (
-    <section className="mt-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-500 bg-clip-text text-transparent">
-          🔍 Explore Music
-        </h2>
+    <section className="mt-20 relative">
+      {/* 🌌 Ambient Glow Background */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+        className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-800 to-cyan-700 blur-3xl opacity-25 pointer-events-none"
+      />
 
-        <div className="flex items-center gap-2 mt-3 sm:mt-0">
+      {/* 🔍 Search Header */}
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 text-center sm:text-left">
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent"
+        >
+          Explore Music 🌐
+        </motion.h2>
+
+        <div className="flex items-center justify-center gap-3 mt-5 sm:mt-0">
           <input
             type="text"
             placeholder="Search songs, albums or playlists..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && searchAll()}
-            className="border border-gray-700 bg-gray-900/70 text-white p-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 w-80"
+            className="border border-white/10 bg-white/5 backdrop-blur-md text-white px-5 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400 w-80 placeholder-gray-400"
           />
           <button
             onClick={searchAll}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold px-5 py-2 rounded-full hover:from-green-400 hover:to-emerald-500 transition-all"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold px-6 py-2 rounded-full transition-all shadow-[0_0_20px_rgba(0,255,255,0.2)] hover:shadow-[0_0_30px_rgba(0,255,255,0.4)]"
           >
-            {loading ? "Loading..." : "Search"}
+            {loading ? "Searching..." : "Search"}
           </button>
         </div>
       </div>
 
-      {/* Results */}
-      {loading ? (
-        <p className="text-gray-400 text-center mt-10">Searching...</p>
-      ) : (
-        <div className="space-y-14">
-          {/* 🎧 Songs Section */}
-          {results.songs.length > 0 && (
-            <div>
-              <h3 className="text-2xl font-semibold mb-4 text-emerald-400">
-                🎧 Songs
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {results.songs.slice(0, 10).map((song, i) => (
-                  <motion.div
-                    key={song.id || i}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="relative bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-emerald-400/40 transition-all"
+      {/* 🌀 Results Section */}
+      <div className="relative z-10 space-y-20">
+        {/* 🎧 Songs */}
+        {results.songs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h3 className="text-3xl font-semibold mb-6 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              🎧 Songs
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+              {results.songs.slice(0, 10).map((song, i) => (
+                <motion.div
+                  key={song.id || i}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="group relative bg-white/10 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_40px_rgba(0,255,255,0.25)] transition-all"
+                >
+                  {/* ❤️ Favorite */}
+                  <button
+                    onClick={() => toggleFavorite(song)}
+                    disabled={favLoading}
+                    className={`absolute z-100 top-3 right-3 p-2 rounded-full backdrop-blur-md ${
+                      isFavorite(song.id)
+                        ? "bg-red-500 text-white"
+                        : "bg-white/10 text-gray-300 hover:bg-red-500 hover:text-white"
+                    }`}
                   >
-                    {/* ❤️ Favorite Button */}
+                    {isFavorite(song.id) ? "❤️" : "🤍"}
+                  </button>
+
+                  <img
+                    src={song.image?.[1]?.url || song.image?.[0]?.url || "/default-song.jpg"}
+                    alt={song.name}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  <div className="p-4 text-center">
+                    <h4 className="font-semibold truncate">{song.name}</h4>
+                    <p className="text-gray-400 text-sm truncate">
+                      {song.primaryArtists || "Unknown Artist"}
+                    </p>
                     <button
-                      onClick={() => toggleFavorite(song)}
-                      disabled={favLoading}
-                      className={`absolute top-3 right-3 p-2 rounded-full transition-all ${
-                        isFavorite(song.id)
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-700/70 text-gray-300 hover:bg-red-500 hover:text-white"
-                      }`}
+                      onClick={() => playSong(song)}
+                      className="mt-3 w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition-all"
                     >
-                      {isFavorite(song.id) ? "❤️" : "🤍"}
+                      ▶ Play
                     </button>
-
-                    {/* Song Image */}
-                    <img
-                      src={
-                        song.image?.[1]?.url ||
-                        song.image?.[0]?.url ||
-                        "/default-song.jpg"
-                      }
-                      alt={song.name}
-                      className="w-full h-48 object-cover"
-                    />
-
-                    <div className="p-3">
-                      <h4 className="font-semibold truncate">
-                        {song.name || song.title}
-                      </h4>
-                      <p className="text-sm text-gray-400 truncate">
-                        {song.artists?.primary
-                          ?.map((a) => a.name)
-                          .join(", ") ||
-                          song.primaryArtists ||
-                          "Unknown Artist"}
-                      </p>
-
-                      {/* 🎵 Listen Song Button */}
-                      <button
-                        onClick={() => playSong(song)}
-                        className="mt-2 bg-emerald-600 text-white px-4 py-1.5 rounded-full text-sm hover:bg-emerald-500 transition-all"
-                      >
-                        🎵 Listen Song
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* 💿 Albums Section */}
-          {results.albums.length > 0 && (
-            <div>
-              <h3 className="text-2xl font-semibold mb-4 text-emerald-400">
-                💿 Albums
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {results.albums.slice(0, 10).map((album, i) => (
-                  <motion.div
-                    key={album.id || i}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-emerald-400/40 transition-all cursor-pointer"
-                  >
-                    <img
-                      src={
-                        album.image?.[1]?.url ||
-                        album.image?.[0]?.url ||
-                        "/default-album.jpg"
-                      }
-                      alt={album.name || album.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="p-3">
-                      <h4 className="font-semibold truncate">
-                        {album.name || album.title}
-                      </h4>
-                      <p className="text-sm text-gray-400 truncate">
-                        {album.artist ||
-                          album.primaryArtists ||
-                          "Unknown Artist"}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+        {/* 💿 Albums */}
+        {results.albums.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h3 className="text-3xl font-semibold mb-6 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              💿 Albums
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+              {results.albums.slice(0, 10).map((album, i) => (
+                <motion.div
+                  key={album.id || i}
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/10 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_40px_rgba(0,255,255,0.25)] transition-all"
+                >
+                  <img
+                    src={album.image?.[1]?.url || album.image?.[0]?.url || "/default-album.jpg"}
+                    alt={album.name}
+                    className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="p-4 text-center">
+                    <h4 className="font-semibold truncate">{album.name}</h4>
+                    <p className="text-gray-400 text-sm truncate">
+                      {album.primaryArtists || "Unknown Artist"}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* 🎶 Playlists Section */}
-          {results.playlists.length > 0 && (
-            <div>
-              <h3 className="text-2xl font-semibold mb-4 text-emerald-400">
-                🎶 Playlists
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {results.playlists.slice(0, 10).map((pl, i) => (
-                  <motion.div
-                    key={pl.id || i}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-emerald-400/40 transition-all cursor-pointer"
-                  >
-                    <img
-                      src={
-                        pl.image?.[1]?.url ||
-                        pl.image?.[0]?.url ||
-                        "/default-playlist.jpg"
-                      }
-                      alt={pl.name || pl.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="p-3">
-                      <h4 className="font-semibold truncate">
-                        {pl.name || pl.title}
-                      </h4>
-                      <p className="text-sm text-gray-400 truncate">
-                        {pl.language || "Mixed Languages"}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+        {/* 🎶 Playlists */}
+        {results.playlists.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h3 className="text-3xl font-semibold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              🎶 Playlists
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+              {results.playlists.slice(0, 10).map((pl, i) => (
+                <motion.div
+                  key={pl.id || i}
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/10 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_40px_rgba(255,200,255,0.25)] transition-all"
+                >
+                  <img
+                    src={pl.image?.[1]?.url || pl.image?.[0]?.url || "/default-playlist.jpg"}
+                    alt={pl.name}
+                    className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="p-4 text-center">
+                    <h4 className="font-semibold truncate">{pl.name}</h4>
+                    <p className="text-gray-400 text-sm truncate">
+                      {pl.language || "Mixed Languages"}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Empty State */}
-          {!loading &&
-            !results.songs.length &&
-            !results.albums.length &&
-            !results.playlists.length && (
-              <div className="text-center text-gray-400 mt-20">
-                <p className="text-lg">
-                  Start typing to explore your favorite music 🎶
-                </p>
-              </div>
-            )}
-        </div>
-      )}
+        {/* Empty */}
+        {!loading &&
+          !results.songs.length &&
+          !results.albums.length &&
+          !results.playlists.length && (
+            <p className="text-gray-400 text-center text-lg mt-20">
+              Start typing to explore your favorite music 🎶
+            </p>
+          )}
+      </div>
     </section>
   );
 }
